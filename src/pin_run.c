@@ -71,8 +71,6 @@ int pin_run(const PinConfiguration* configuration) {
             time_difference_exceeds(configuration->pin_ins[i].debounce, last_interrupt[i], current_time)) {
 
           last_interrupt[i] = current_time;
-          printf("Signal on index: %i\n", i);
-          printf("Read: %s\n", state == LOW ? "LOW" : "HIGH");
 
           if(configuration->pin_ins[i].reaction)
             configuration->pin_ins[i].reaction(

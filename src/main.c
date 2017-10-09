@@ -1,8 +1,12 @@
 
 #include "pin_daemon.h"
-#include <unistd.h>
+#include <time.h>
+#include <stdio.h>
 
-void ring_doorbell(PinState state, void* userptr);
+static void ring_doorbell(PinState state, void* userptr);
+static void light_change(PinState state, void* userptr);
+
+#define LIGHT_LOG "/mnt/HackRVA-NAS/lights.log"
 
 const PinInConfiguration pin_ins[] = {
   { // light
@@ -12,7 +16,7 @@ const PinInConfiguration pin_ins[] = {
     "/sys/class/gpio/gpio18/edge",
     BOTH,
 
-    NULL, // callback
+    light_change, // callback
     NULL, // callback userptr
     {0, 0}, // no debounce
     1 // ignore ephemeral changes
@@ -70,11 +74,21 @@ const struct timespec ring_hold = {
   200000000
 };
 
-void ring_doorbell(PinState state, void* userptr) {
+static void ring_doorbell(PinState state, void* userptr) {
   if(state != HIGH)
     return;
   pin_set_state(&pin_outs[1], HIGH);
   nanosleep(&ring_hold, NULL);
   pin_set_state(&pin_outs[1], LOW);
+}
+
+static void light_change(PinState state, void* userptr) {
+  FILE* f = fopen(LIGHT_LOG, "a");
+  if(f == NULL)
+    printf("Failed to open LIGHT_LOG file: %s\n", LIGHT_LOG);
+  struct timespec current_time;
+  clock_gettime(CLOCK_REALTIME, &current_time);
+  fprintf(f, "%lld:%ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == HIGH ? "BRIGHT" : "DARK");
+  fclose(f);
 }
 
