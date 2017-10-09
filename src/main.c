@@ -2,6 +2,8 @@
 #include "pin_daemon.h"
 #include <unistd.h>
 
+void ring_doorbell(PinState state, void* userptr);
+
 const PinInConfiguration pin_ins[] = {
   { // light
     "18",
@@ -9,17 +11,23 @@ const PinInConfiguration pin_ins[] = {
     "/sys/class/gpio/gpio18/value",
     "/sys/class/gpio/gpio18/edge",
     BOTH,
-    NULL,
-    NULL
+
+    NULL, // callback
+    NULL, // callback userptr
+    {0, 0}, // no debounce
+    1 // ignore ephemeral changes
   },
   { // button
     "23",
     "/sys/class/gpio/gpio23/direction",
     "/sys/class/gpio/gpio23/value",
     "/sys/class/gpio/gpio23/edge",
-    HIGH,
-    NULL,
-    NULL
+    BOTH,
+
+    ring_doorbell, // callback
+    NULL, // callback userptr
+    {0, 200000000}, // 20ms debounce
+    1 // ignore ephemeral changes
   }
 };
 
@@ -37,6 +45,7 @@ const PinOutConfiguration pin_outs[] = {
 };
 
 const PinConfiguration configuration = {
+  86400000, /* an hour in milliseconds 1000 * 60 * 60 * 24 */
   // export file
   "/sys/class/gpio/export",
   // unexport file
@@ -51,19 +60,21 @@ const PinConfiguration configuration = {
 
 int main(int argc, char** argv) {
 
-  // export the pins
-  pin_start(&configuration);
+  pin_run(&configuration);
 
-  // Ring the backdoor bell
-  pin_set_state(&configuration.pin_outs[0], HIGH);
+}
 
-  // Wait a second
-  sleep(1);
+// Hold the ring for 200ms
+const struct timespec ring_hold = {
+  0,
+  200000000
+};
 
-  // Turn the pin off
-  pin_set_state(&configuration.pin_outs[0], LOW);
-
-  // unexport the pins
-  pin_finish(&configuration);
+void ring_doorbell(PinState state, void* userptr) {
+  if(state != HIGH)
+    return;
+  pin_set_state(&pin_outs[1], HIGH);
+  nanosleep(&ring_hold, NULL);
+  pin_set_state(&pin_outs[1], LOW);
 }
 

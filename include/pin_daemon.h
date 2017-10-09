@@ -5,13 +5,10 @@
 
 #define NUM_GPIO_PINS 27
 #define NULL 0
+#include <time.h>
 
 typedef struct PinInConfiguration PinInConfiguration;
 typedef struct PinOutConfiguration PinOutConfiguration;
-// An opaque struct for handling pin state
-typedef struct PinContext PinContext;
-typedef struct PinIn PinIn;
-typedef struct PinOut PinOut;
 
 typedef enum PinState {
   LOW,
@@ -26,9 +23,7 @@ typedef enum PinEdge {
 } PinEdge;
 
 typedef void (*Reaction)(
-    PinInConfiguration* pin,
     PinState state,
-    PinContext* pin_data,
     void* user_pointer);
 
 struct PinInConfiguration {
@@ -40,6 +35,9 @@ struct PinInConfiguration {
   PinEdge edge;
   Reaction reaction;
   void* reaction_user_pointer;
+
+  struct timespec debounce;
+  int ignore_ephemeral_changes;
 };
 
 struct PinOutConfiguration {
@@ -49,6 +47,9 @@ struct PinOutConfiguration {
 };
 
 typedef struct PinConfiguration {
+
+  // Number of milliseconds to poll before the daemon quits
+  long daemon_sleep_ms;
 
   const char* export_path;
   const char* unexport_path;
