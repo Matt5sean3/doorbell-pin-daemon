@@ -7,9 +7,6 @@
 #define NULL 0
 #include <time.h>
 
-typedef struct PinInConfiguration PinInConfiguration;
-typedef struct PinOutConfiguration PinOutConfiguration;
-
 typedef enum PinState {
   LOW,
   HIGH
@@ -26,7 +23,7 @@ typedef void (*Reaction)(
     PinState state,
     void* user_pointer);
 
-struct PinInConfiguration {
+typedef struct PinInConfiguration {
   const char* identifier;
   const char* direction_path;
   const char* value_path;
@@ -38,13 +35,18 @@ struct PinInConfiguration {
 
   struct timespec debounce;
   int ignore_ephemeral_changes;
-};
+} PinInConfiguration;
 
-struct PinOutConfiguration {
+typedef struct PinOutConfiguration {
   const char* identifier;
   const char* direction_path;
   const char* value_path;
-};
+} PinOutConfiguration;
+
+typedef struct SocketConfiguration {
+  const char* file;
+  int baud;
+} SocketConfiguration;
 
 typedef struct PinConfiguration {
 
@@ -60,17 +62,27 @@ typedef struct PinConfiguration {
   int num_pin_outs;
   const PinOutConfiguration* pin_outs;
 
+  int num_uart;
+  const SocketConfiguration* sockets;
+
 } PinConfiguration;
+
+typedef struct PinContext;
+
+typedef struct Pin
 
 // Run the declaratively defined pin context
 int pin_run(
-    const PinConfiguration* configuration);
+    const PinConfiguration* configuration,
+    PinContext* ctx);
 
 int pin_start(
-    const PinConfiguration* configuration);
+    const PinConfiguration* configuration,
+    PinContext* ctx);
 
 int pin_finish(
-    const PinConfiguration* configuration);
+    const PinConfiguration* configuration,
+    PinContext* ctx);
 
 PinState pin_get_state(
     const PinInConfiguration* pin_in);

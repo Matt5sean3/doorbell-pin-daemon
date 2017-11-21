@@ -7,45 +7,42 @@ static void ring_doorbell(PinState state, void* userptr);
 static void light_change(PinState state, void* userptr);
 
 #define LIGHT_LOG "/mnt/HackRVA-NAS/lights.log"
+#define PIN_OUT(pin) { \
+    pin, \
+    "/sys/class/gpio/gpio" pin "/direction", \
+    "/sys/class/gpio/gpio" pin "/value" \
+  }
+
+#define PIN_IN(pin, edges, callback, userptr, debounce, ignore_ephemeral) { \
+    pin, \
+    "/sys/class/gpio/gpio" pin "/direction", \
+    "/sys/class/gpio/gpio" pin "/value", \
+    "/sys/class/gpio/gpio" pin "/edge", \
+    edges, \
+    userptr, \
+    debounce, \
+    ignore_ephemeral \
+  }
 
 const PinInConfiguration pin_ins[] = {
-  { // light
-    "18",
-    "/sys/class/gpio/gpio18/direction",
-    "/sys/class/gpio/gpio18/value",
-    "/sys/class/gpio/gpio18/edge",
-    BOTH,
-
-    light_change, // callback
-    NULL, // callback userptr
-    {0, 0}, // no debounce
-    1 // ignore ephemeral changes
-  },
-  { // button
-    "23",
-    "/sys/class/gpio/gpio23/direction",
-    "/sys/class/gpio/gpio23/value",
-    "/sys/class/gpio/gpio23/edge",
-    BOTH,
-
-    ring_doorbell, // callback
-    NULL, // callback userptr
-    {0, 200000000}, // 20ms debounce
-    1 // ignore ephemeral changes
-  }
+  // light sensor
+  PIN_IN("4", BOTH, light_change, NULL, {0, 0}, 1),
+  // button
+  // 20ms debounce
+  PIN_IN("17", BOTH, ring_doorbell, NULL, {0, 200000000}, 1)
 };
 
 const PinOutConfiguration pin_outs[] = {
-  { // back doorbell
-    "24",
-    "/sys/class/gpio/gpio24/direction",
-    "/sys/class/gpio/gpio24/value"
-  },
-  { // front doorbell
-    "25",
-    "/sys/class/gpio/gpio25/direction",
-    "/sys/class/gpio/gpio25/value"
-  }
+  PIN_OUT("18"), // back doorbell
+  PIN_OUT("27"), // front doorbell
+  PIN_OUT("22"), // unused 12V control
+  PIN_OUT("23"), // strike lock
+  PIN_OUT("24") // RFID enable
+};
+
+const SocketConfiguration sockets[] = {
+  "/dev/serial0",
+  
 };
 
 const PinConfiguration configuration = {
@@ -54,12 +51,15 @@ const PinConfiguration configuration = {
   "/sys/class/gpio/export",
   // unexport file
   "/sys/class/gpio/unexport",
-  // number of input pins
+  // input pins
   2,
   pin_ins,
-  // number of output pins
+  // output pins
   2,
   pin_outs
+  // sockets
+  1,
+  sockets
 };
 
 int main(int argc, char** argv) {

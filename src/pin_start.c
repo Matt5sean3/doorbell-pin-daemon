@@ -3,7 +3,7 @@
 
 // Uses `wait_for_file` to allow permission changes to propagate after input to export
 
-int pin_start(const PinConfiguration* configuration) {
+int pin_start(const PinConfiguration* configuration, PinContext* ctx) {
   int i;
 
   for(i = 0; i < configuration->num_pin_ins; i++) {
@@ -53,4 +53,9 @@ int pin_start(const PinConfiguration* configuration) {
     wait_for_file(configuration->pin_outs[i].value_path);
   }
 
+  for(i = 0; i < configuration->num_sockets; i++) {
+    // configure the socket for reading
+  }
+
+  return NULL;
 }
