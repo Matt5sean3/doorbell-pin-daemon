@@ -14,7 +14,7 @@ const PinInConfiguration pin_ins[] = {
     "/sys/class/gpio/gpio18/direction",
     "/sys/class/gpio/gpio18/value",
     "/sys/class/gpio/gpio18/edge",
-    BOTH,
+    PIN_EDGE_BOTH,
 
     light_change, // callback
     NULL, // callback userptr
@@ -26,7 +26,7 @@ const PinInConfiguration pin_ins[] = {
     "/sys/class/gpio/gpio23/direction",
     "/sys/class/gpio/gpio23/value",
     "/sys/class/gpio/gpio23/edge",
-    BOTH,
+    PIN_EDGE_BOTH,
 
     ring_doorbell, // callback
     NULL, // callback userptr
@@ -75,11 +75,11 @@ const struct timespec ring_hold = {
 };
 
 static void ring_doorbell(PinState state, void* userptr) {
-  if(state != HIGH)
+  if(state != PIN_STATE_HIGH)
     return;
-  pin_set_state(&pin_outs[1], HIGH);
+  pin_set_state(&pin_outs[1], PIN_STATE_HIGH);
   nanosleep(&ring_hold, NULL);
-  pin_set_state(&pin_outs[1], LOW);
+  pin_set_state(&pin_outs[1], PIN_STATE_LOW);
 }
 
 static void light_change(PinState state, void* userptr) {
@@ -88,7 +88,7 @@ static void light_change(PinState state, void* userptr) {
     printf("Failed to open LIGHT_LOG file: %s\n", LIGHT_LOG);
   struct timespec current_time;
   clock_gettime(CLOCK_REALTIME, &current_time);
-  fprintf(f, "%lld:%ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == HIGH ? "BRIGHT" : "DARK");
+  fprintf(f, "%lld:%ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == PIN_STATE_HIGH ? "BRIGHT" : "DARK");
   fclose(f);
 }
 

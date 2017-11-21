@@ -11,15 +11,15 @@ typedef struct PinInConfiguration PinInConfiguration;
 typedef struct PinOutConfiguration PinOutConfiguration;
 
 typedef enum PinState {
-  LOW,
-  HIGH
+  PIN_STATE_LOW,
+  PIN_STATE_HIGH
 } PinState;
 
 typedef enum PinEdge {
-  NONE,
-  RISING,
-  FALLING,
-  BOTH
+  PIN_EDGE_NONE,
+  PIN_EDGE_RISING,
+  PIN_EDGE_FALLING,
+  PIN_EDGE_BOTH
 } PinEdge;
 
 typedef void (*Reaction)(

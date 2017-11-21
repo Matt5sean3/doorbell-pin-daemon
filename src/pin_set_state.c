@@ -6,8 +6,8 @@ int pin_set_state(
     PinState state) {
   write_to_file(
       pin_out->value_path,
-      state == LOW ? "0" :
-      state == HIGH ? "1" :
+      state == PIN_STATE_LOW ? "0" :
+      state == PIN_STATE_HIGH ? "1" :
       "0");
 }
 
