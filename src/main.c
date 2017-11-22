@@ -88,7 +88,7 @@ static void light_change(PinState state, void* userptr) {
     printf("Failed to open LIGHT_LOG file: %s\n", LIGHT_LOG);
   struct timespec current_time;
   clock_gettime(CLOCK_REALTIME, &current_time);
-  fprintf(f, "%lld:%ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == PIN_STATE_HIGH ? "BRIGHT" : "DARK");
+  fprintf(f, "%lld:%9ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == PIN_STATE_HIGH ? "B" : "D");
   fclose(f);
 }
 
