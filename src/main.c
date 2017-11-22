@@ -10,10 +10,10 @@ static void light_change(PinState state, void* userptr);
 
 const PinInConfiguration pin_ins[] = {
   { // light
-    "18",
-    "/sys/class/gpio/gpio18/direction",
-    "/sys/class/gpio/gpio18/value",
-    "/sys/class/gpio/gpio18/edge",
+    "4",
+    "/sys/class/gpio/gpio4/direction",
+    "/sys/class/gpio/gpio4/value",
+    "/sys/class/gpio/gpio4/edge",
     PIN_EDGE_BOTH,
 
     light_change, // callback
@@ -22,10 +22,10 @@ const PinInConfiguration pin_ins[] = {
     1 // ignore ephemeral changes
   },
   { // button
-    "23",
-    "/sys/class/gpio/gpio23/direction",
-    "/sys/class/gpio/gpio23/value",
-    "/sys/class/gpio/gpio23/edge",
+    "17",
+    "/sys/class/gpio/gpio17/direction",
+    "/sys/class/gpio/gpio17/value",
+    "/sys/class/gpio/gpio17/edge",
     PIN_EDGE_BOTH,
 
     ring_doorbell, // callback
@@ -37,14 +37,14 @@ const PinInConfiguration pin_ins[] = {
 
 const PinOutConfiguration pin_outs[] = {
   { // back doorbell
-    "24",
-    "/sys/class/gpio/gpio24/direction",
-    "/sys/class/gpio/gpio24/value"
+    "18",
+    "/sys/class/gpio/gpio18/direction",
+    "/sys/class/gpio/gpio18/value"
   },
   { // front doorbell
-    "25",
-    "/sys/class/gpio/gpio25/direction",
-    "/sys/class/gpio/gpio25/value"
+    "27",
+    "/sys/class/gpio/gpio27/direction",
+    "/sys/class/gpio/gpio27/value"
   }
 };
 
