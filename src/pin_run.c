@@ -64,10 +64,10 @@ int pin_run(const PinConfiguration* configuration) {
       if(poll_fds[i].revents & POLLPRI) {
         FILE* file_handle = pin_in_file_handles[i];
         char status_character = drain_sysfs_file(file_handle);
-        PinState state = status_character == '0' ? LOW : HIGH;
+        PinState state = status_character == '0' ? PIN_STATE_LOW : PIN_STATE_HIGH;
 
         if(
-            (state != last_state[i] || configuration->pin_ins[i].edge != BOTH) &&
+            (state != last_state[i] || configuration->pin_ins[i].edge != PIN_EDGE_BOTH) &&
             time_difference_exceeds(configuration->pin_ins[i].debounce, last_interrupt[i], current_time)) {
 
           last_interrupt[i] = current_time;

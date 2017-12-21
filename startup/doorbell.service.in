@@ -1,0 +1,12 @@
+[Unit]
+Description=Doorbell Daemon
+After=network.target
+
+[Service]
+ExecStart=@BINARY_INSTALL_PATH@/pin_daemon
+Restart=on-failure
+Type=Simple
+
+[Install]
+WantedBy=multi-user.target
+

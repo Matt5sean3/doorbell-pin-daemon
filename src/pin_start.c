@@ -28,9 +28,9 @@ int pin_start(const PinConfiguration* configuration, PinContext* ctx) {
 
     write_to_file(
         configuration->pin_ins[i].edge_path,
-        edge == RISING ? "rising" :
-        edge == FALLING ? "falling" :
-        edge == BOTH ? "both" :
+        edge == PIN_EDGE_RISING ? "rising" :
+        edge == PIN_EDGE_FALLING ? "falling" :
+        edge == PIN_EDGE_BOTH ? "both" :
         "none");
 
     wait_for_file(configuration->pin_ins[i].value_path);

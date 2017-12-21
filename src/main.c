@@ -26,10 +26,10 @@ static void light_change(PinState state, void* userptr);
 
 const PinInConfiguration pin_ins[] = {
   // light sensor
-  PIN_IN("4", BOTH, light_change, NULL, {0, 0}, 1),
+  PIN_IN("4", PIN_EDGE_BOTH, light_change, NULL, {0, 0}, 1),
   // button
   // 20ms debounce
-  PIN_IN("17", BOTH, ring_doorbell, NULL, {0, 200000000}, 1)
+  PIN_IN("17", PIN_EDGE_BOTH, ring_doorbell, NULL, {0, 200000000}, 1)
 };
 
 const PinOutConfiguration pin_outs[] = {
@@ -40,10 +40,11 @@ const PinOutConfiguration pin_outs[] = {
   PIN_OUT("24") // RFID enable
 };
 
+/*
 const SocketConfiguration sockets[] = {
   "/dev/serial0",
-  
 };
+*/
 
 const PinConfiguration configuration = {
   86400000, /* an hour in milliseconds 1000 * 60 * 60 * 24 */
@@ -75,11 +76,11 @@ const struct timespec ring_hold = {
 };
 
 static void ring_doorbell(PinState state, void* userptr) {
-  if(state != HIGH)
+  if(state != PIN_STATE_HIGH)
     return;
-  pin_set_state(&pin_outs[1], HIGH);
+  pin_set_state(&pin_outs[1], PIN_STATE_HIGH);
   nanosleep(&ring_hold, NULL);
-  pin_set_state(&pin_outs[1], LOW);
+  pin_set_state(&pin_outs[1], PIN_STATE_LOW);
 }
 
 static void light_change(PinState state, void* userptr) {
@@ -88,7 +89,7 @@ static void light_change(PinState state, void* userptr) {
     printf("Failed to open LIGHT_LOG file: %s\n", LIGHT_LOG);
   struct timespec current_time;
   clock_gettime(CLOCK_REALTIME, &current_time);
-  fprintf(f, "%lld:%ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == HIGH ? "BRIGHT" : "DARK");
+  fprintf(f, "%lld:%9ld %s\n", (long long) current_time.tv_sec, current_time.tv_nsec, state == PIN_STATE_HIGH ? "B" : "D");
   fclose(f);
 }
 
