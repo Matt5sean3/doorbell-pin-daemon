@@ -36,7 +36,8 @@ int pin_run(const PinConfiguration* configuration) {
 
   int i;
   int ready;
-  FILE* streams[configuration->num_sockets];
+  // Needs to be non-blocking
+  int streams[configuration->num_sockets];
 
   // Create the set of polled pins
   struct pollfd poll_fds[configuration->num_pin_ins + configuration->num_sockets];
@@ -48,38 +49,41 @@ int pin_run(const PinConfiguration* configuration) {
 
   // Open streams
   for(i = 0; i < configuration->num_sockets; i++) {
-    streams[i] = fopen(configuration->sockets[i].file, configuration->sockets[i].mode);
-    poll_fds[i].fd = fileno(streams[i]);
+    streams[i] = open(configuration->sockets[i].file, configuration->sockets[i].mode);
+    poll_fds[i].fd = streams[i];
     poll_fds[i].events = configuration->sockets[i].poll_mode;
   }
 
   for(i = 0; i < configuration->num_pin_ins; i++) {
+    int j = i + configuration->num_sockets;
     pin_in_file_handles[i] = fopen(configuration->pin_ins[i].value_path, "r");
-    poll_fds[i + configuration->num_sockets].fd = fileno(pin_in_file_handles[i]);
-    poll_fds[i + configuration->num_sockets].events = POLLPRI;
+    poll_fds[j].fd = fileno(pin_in_file_handles[i]);
+    poll_fds[j].events = POLLPRI;
     clock_gettime(CLOCK_MONOTONIC, &last_interrupt[i]);
   }
 
   do {
     
     ready = poll(poll_fds, configuration->num_pin_ins, configuration->daemon_sleep_ms);
+    printf("Passed poll\n");
 
     struct timespec current_time;
     if(clock_gettime(CLOCK_MONOTONIC, &current_time)) {
-      printf("Clock failure!");
+      printf("Clock failure!\n");
       break;
     }
 
     for(i = 0; i < configuration->num_sockets; i++) {
       if(poll_fds[i].revents) {
-        FILE* stream = streams[i];
-        configuration->sockets[i].reaction(stream, configuration->sockets[i].reaction_user_pointer);
+	printf("Socket %i triggered\n", i, poll_fds[i].revents);
+        configuration->sockets[i].reaction(streams[i], configuration->sockets[i].reaction_user_pointer);
       }
     }
 
     for(i = 0; i < configuration->num_pin_ins; i++) {
       int j = i + configuration->num_sockets;
       if(poll_fds[j].revents & POLLPRI) {
+	printf("Pin %i Triggered\n", j);
         FILE* file_handle = pin_in_file_handles[i];
         char status_character = drain_sysfs_file(file_handle);
         PinState state = status_character == '0' ? PIN_STATE_LOW : PIN_STATE_HIGH;
@@ -99,6 +103,7 @@ int pin_run(const PinConfiguration* configuration) {
         last_state[i] = state;
       }
     }
+    printf("Hit end\n");
   } while(ready > 0);
 
   for(i = 0; i < configuration->num_pin_ins; i++) {
@@ -106,7 +111,7 @@ int pin_run(const PinConfiguration* configuration) {
   }
 
   for(i = 0; i < configuration->num_sockets; i++) {
-    fclose(streams[i]);
+    close(streams[i]);
   }
 
   pin_finish(configuration);

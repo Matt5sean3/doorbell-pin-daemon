@@ -6,7 +6,7 @@
 #define NUM_GPIO_PINS 27
 #define NULL 0
 #include <time.h>
-#include <stdio.h>
+#include <unistd.h>
 
 typedef enum PinState {
   PIN_STATE_LOW,
@@ -25,7 +25,7 @@ typedef void (*Reaction)(
     void* user_pointer);
 
 typedef void (*StreamReaction)(
-    FILE* f,
+    int stream,
     void* user_pointer);
 
 typedef struct PinInConfiguration {
@@ -50,7 +50,7 @@ typedef struct PinOutConfiguration {
 
 typedef struct SocketConfiguration {
   const char* file;
-  const char* mode;
+  int mode;
   StreamReaction reaction;
   void* reaction_user_pointer;
   int poll_mode;

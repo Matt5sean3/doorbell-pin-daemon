@@ -1,12 +1,14 @@
 
 #include "pin_daemon.h"
 #include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <poll.h>
 
 static void ring_doorbell(PinState state, void* userptr);
 static void light_change(PinState state, void* userptr);
-static void rfid_reaction(FILE* stream, void* userptr);
+static void rfid_reaction(int stream, void* userptr);
 
 #define LIGHT_LOG "/mnt/HackRVA-NAS/lights.log"
 #define PIN_OUT(pin) { \
@@ -44,8 +46,8 @@ const PinOutConfiguration pin_outs[] = {
 };
 
 const SocketConfiguration sockets[] = {
-  { "/dev/serial0", "r", NULL, NULL, POLLRDNORM, 4800 },
-  { "/var/pin-daemon", "r", NULL, NULL, POLLRDNORM,4800 }
+  { "/dev/serial0", O_RDONLY | O_NONBLOCK, NULL, NULL, POLLRDNORM, 4800 },
+  { "/var/pin-daemon", O_RDONLY | O_NONBLOCK, NULL, NULL, POLLRDNORM,4800 }
 };
 
 const PinConfiguration configuration = {
@@ -58,10 +60,10 @@ const PinConfiguration configuration = {
   2,
   pin_ins,
   // output pins
-  2,
+  5,
   pin_outs,
   // sockets
-  1,
+  2,
   sockets
 };
 
@@ -95,12 +97,12 @@ static void light_change(PinState state, void* userptr) {
   fclose(f);
 }
 
-static void rfid_reaction(FILE* stream, void* userptr) {
+static void rfid_reaction(int stream, void* userptr) {
   size_t nread;
   // Hopefully it doesn't go out of sync
   char buffer[11];
-  fread(buffer, sizeof(char), 11, stream);
+  // read(stream, buffer, 10);
   buffer[10] = 0;
-  printf("Read from RFID: %s", buffer);
+  // printf("Read from RFID: %s", buffer);
 }
 
