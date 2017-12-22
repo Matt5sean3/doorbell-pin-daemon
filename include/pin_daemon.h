@@ -20,6 +20,15 @@ typedef enum PinEdge {
   PIN_EDGE_BOTH
 } PinEdge;
 
+typedef enum PinStreamConfig {
+  FIFO,
+  BAUD1200,
+  BAUD2400,
+  BAUD4800,
+  BAUD9600
+} PinStreamConfig;
+
+
 typedef void (*Reaction)(
     PinState state,
     void* user_pointer);
@@ -54,7 +63,7 @@ typedef struct SocketConfiguration {
   StreamReaction reaction;
   void* reaction_user_pointer;
   int poll_mode;
-  int baud;
+  PinStreamConfig config;
 } SocketConfiguration;
 
 typedef struct PinConfiguration {

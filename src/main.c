@@ -9,6 +9,7 @@
 static void ring_doorbell(PinState state, void* userptr);
 static void light_change(PinState state, void* userptr);
 static void rfid_reaction(int stream, void* userptr);
+static void fifo_reaction(int stream, void* userptr);
 
 #define LIGHT_LOG "/mnt/HackRVA-NAS/lights.log"
 #define PIN_OUT(pin) { \
@@ -46,8 +47,9 @@ const PinOutConfiguration pin_outs[] = {
 };
 
 const SocketConfiguration sockets[] = {
-  { "/dev/serial0", O_RDONLY | O_NONBLOCK, NULL, NULL, POLLRDNORM, 4800 },
-  { "/var/pin-daemon", O_RDONLY | O_NONBLOCK, NULL, NULL, POLLRDNORM,4800 }
+  { "/dev/serial0", O_RDONLY | O_NONBLOCK, rfid_reaction, NULL, POLLRDNORM, BAUD2400 },
+  // Create a fifo that can be manipulated
+  { "pin-daemon", O_RDONLY | O_NONBLOCK, fifo_reaction, NULL, POLLRDNORM, FIFO }
 };
 
 const PinConfiguration configuration = {
@@ -68,7 +70,6 @@ const PinConfiguration configuration = {
 };
 
 int main(int argc, char** argv) {
-
   pin_run(&configuration);
 
 }
@@ -98,11 +99,25 @@ static void light_change(PinState state, void* userptr) {
 }
 
 static void rfid_reaction(int stream, void* userptr) {
-  size_t nread;
+  ssize_t nread;
   // Hopefully it doesn't go out of sync
   char buffer[11];
-  // read(stream, buffer, 10);
+  do {
+  nread = read(stream, buffer, 10);
   buffer[10] = 0;
-  // printf("Read from RFID: %s", buffer);
+  printf("Read from RFID: %s", buffer);
+  } while(nread > 0);
+}
+
+static void fifo_reaction(int stream, void* userptr) {
+  ssize_t nread;
+  do {
+    char buffer[21];
+    nread = read(stream, buffer, 20);
+    buffer[nread] = 0;
+    printf("Read %i from FIFO: %s\n", nread, buffer);
+    if(nread <= 0)
+      printf("Should Quit\n");
+  } while(nread > 0);
 }
 
