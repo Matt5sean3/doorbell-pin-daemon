@@ -6,6 +6,7 @@
 #define NUM_GPIO_PINS 27
 #define NULL 0
 #include <time.h>
+#include <stdio.h>
 
 typedef enum PinState {
   PIN_STATE_LOW,
@@ -21,6 +22,10 @@ typedef enum PinEdge {
 
 typedef void (*Reaction)(
     PinState state,
+    void* user_pointer);
+
+typedef void (*StreamReaction)(
+    FILE* f,
     void* user_pointer);
 
 typedef struct PinInConfiguration {
@@ -45,6 +50,10 @@ typedef struct PinOutConfiguration {
 
 typedef struct SocketConfiguration {
   const char* file;
+  const char* mode;
+  StreamReaction reaction;
+  void* reaction_user_pointer;
+  int poll_mode;
   int baud;
 } SocketConfiguration;
 
@@ -62,27 +71,20 @@ typedef struct PinConfiguration {
   int num_pin_outs;
   const PinOutConfiguration* pin_outs;
 
-  int num_uart;
+  int num_sockets;
   const SocketConfiguration* sockets;
 
 } PinConfiguration;
 
-typedef struct PinContext;
-
-typedef struct Pin
-
 // Run the declaratively defined pin context
 int pin_run(
-    const PinConfiguration* configuration,
-    PinContext* ctx);
+    const PinConfiguration* configuration);
 
 int pin_start(
-    const PinConfiguration* configuration,
-    PinContext* ctx);
+    const PinConfiguration* configuration);
 
 int pin_finish(
-    const PinConfiguration* configuration,
-    PinContext* ctx);
+    const PinConfiguration* configuration);
 
 PinState pin_get_state(
     const PinInConfiguration* pin_in);

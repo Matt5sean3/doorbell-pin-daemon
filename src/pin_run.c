@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <poll.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 // Node types for linked lists
@@ -34,19 +36,27 @@ int pin_run(const PinConfiguration* configuration) {
 
   int i;
   int ready;
+  FILE* streams[configuration->num_sockets];
 
   // Create the set of polled pins
-  struct pollfd poll_fds[configuration->num_pin_ins];
+  struct pollfd poll_fds[configuration->num_pin_ins + configuration->num_sockets];
   struct timespec last_interrupt[configuration->num_pin_ins];
   PinState last_state[configuration->num_pin_ins];
   FILE* pin_in_file_handles[configuration->num_pin_ins];
 
   pin_start(configuration);
 
+  // Open streams
+  for(i = 0; i < configuration->num_sockets; i++) {
+    streams[i] = fopen(configuration->sockets[i].file, configuration->sockets[i].mode);
+    poll_fds[i].fd = fileno(streams[i]);
+    poll_fds[i].events = configuration->sockets[i].poll_mode;
+  }
+
   for(i = 0; i < configuration->num_pin_ins; i++) {
     pin_in_file_handles[i] = fopen(configuration->pin_ins[i].value_path, "r");
-    poll_fds[i].fd = fileno(pin_in_file_handles[i]);
-    poll_fds[i].events = POLLPRI;
+    poll_fds[i + configuration->num_sockets].fd = fileno(pin_in_file_handles[i]);
+    poll_fds[i + configuration->num_sockets].events = POLLPRI;
     clock_gettime(CLOCK_MONOTONIC, &last_interrupt[i]);
   }
 
@@ -60,8 +70,16 @@ int pin_run(const PinConfiguration* configuration) {
       break;
     }
 
+    for(i = 0; i < configuration->num_sockets; i++) {
+      if(poll_fds[i].revents) {
+        FILE* stream = streams[i];
+        configuration->sockets[i].reaction(stream, configuration->sockets[i].reaction_user_pointer);
+      }
+    }
+
     for(i = 0; i < configuration->num_pin_ins; i++) {
-      if(poll_fds[i].revents & POLLPRI) {
+      int j = i + configuration->num_sockets;
+      if(poll_fds[j].revents & POLLPRI) {
         FILE* file_handle = pin_in_file_handles[i];
         char status_character = drain_sysfs_file(file_handle);
         PinState state = status_character == '0' ? PIN_STATE_LOW : PIN_STATE_HIGH;
@@ -85,6 +103,10 @@ int pin_run(const PinConfiguration* configuration) {
 
   for(i = 0; i < configuration->num_pin_ins; i++) {
     fclose(pin_in_file_handles[i]);
+  }
+
+  for(i = 0; i < configuration->num_sockets; i++) {
+    fclose(streams[i]);
   }
 
   pin_finish(configuration);
