@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
-project(pin_daemon)
+project(pin_daemon
+  LANGUAGES C)
 
 include_directories(include)
 
