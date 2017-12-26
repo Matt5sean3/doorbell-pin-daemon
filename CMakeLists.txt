@@ -20,3 +20,24 @@ add_executable(pin_daemon
 target_link_libraries(pin_daemon
   pin)
 
+# === Add tests ===
+
+# Create the testing executable
+include_directories(test/include)
+
+add_executable(test_pin_daemon
+  test/src/test.c
+  test/src/test_socket_triggers_callback_on_read.c)
+
+target_link_libraries(test_pin_daemon
+  pin)
+
+# Add the tests
+enable_testing()
+
+add_test(
+  NAME test_socket_triggers_callback_on_read
+  COMMAND test_pin_daemon test_socket_triggers_callback_on_read
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test/resources)
+
+

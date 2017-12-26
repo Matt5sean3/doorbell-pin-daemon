@@ -4,9 +4,12 @@
 #define PIN_DAEMON_H_
 
 #define NUM_GPIO_PINS 27
-#define NULL 0
 #include <time.h>
 #include <unistd.h>
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 typedef enum PinState {
   PIN_STATE_LOW,
