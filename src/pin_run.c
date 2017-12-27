@@ -60,7 +60,7 @@ int pin_run(const PinConfiguration* configuration) {
     }
     streams[i] = open(configuration->sockets[i].file, configuration->sockets[i].mode);
     if(streams[i] < 0) {
-
+      printf("Opening file failed\n%s\n", strerror(errno));
     } else {
       poll_fds[i].fd = streams[i];
       poll_fds[i].events = configuration->sockets[i].poll_mode;

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <poll.h>
+#include <stdlib.h>
 
 static void ring_doorbell(PinState state, void* userptr);
 static void light_change(PinState state, void* userptr);
@@ -47,7 +48,7 @@ const PinOutConfiguration pin_outs[] = {
 };
 
 const SocketConfiguration sockets[] = {
-  { "/dev/serial0", O_RDONLY | O_NONBLOCK, rfid_reaction, NULL, POLLRDNORM, BAUD2400 },
+  { "/dev/serial0", O_RDONLY | O_NONBLOCK, rfid_reaction, NULL, POLLIN, BAUD2400 },
   // Create a fifo that can be manipulated
   { "pin-daemon", O_RDONLY | O_NONBLOCK, fifo_reaction, NULL, POLLRDNORM, FIFO }
 };
@@ -99,25 +100,29 @@ static void light_change(PinState state, void* userptr) {
 }
 
 static void rfid_reaction(int stream, void* userptr) {
-  ssize_t nread;
   // Hopefully it doesn't go out of sync
-  char buffer[11];
-  do {
-  nread = read(stream, buffer, 10);
-  buffer[10] = 0;
-  printf("Read from RFID: %s", buffer);
-  } while(nread > 0);
+  ssize_t nread;
+  char buffer[21];
+  long num = 0;
+  while((nread = read(stream, buffer, 21)) > 0) {
+    buffer[nread] = 0;
+    buffer[20] = 0;
+    // Convert second byte and onward from hex into a long
+    num = strtol(&buffer[2], NULL, 16);
+    // ignore first byte
+    printf("Read from RFID: %li\n", buffer, num);
+    // Needs to check with
+  }
 }
 
 static void fifo_reaction(int stream, void* userptr) {
   ssize_t nread;
-  do {
-    char buffer[21];
-    nread = read(stream, buffer, 20);
+  char buffer[21];
+  while((nread = read(stream, buffer, 20)) > 0) {
     buffer[nread] = 0;
     printf("Read %i from FIFO: %s\n", nread, buffer);
-    if(nread <= 0)
-      printf("Should Quit\n");
-  } while(nread > 0);
+  }
+  if(nread < 0)
+    printf("Should Quit\n");
 }
 
