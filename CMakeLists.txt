@@ -18,19 +18,25 @@ add_executable(pin_daemon
   src/main.c)
 
 target_link_libraries(pin_daemon
-  pin)
+  pin
+  ${CURL_LIBRARIES}
+  )
 
 # === Add tests ===
 
 # Create the testing executable
 include_directories(test/include)
 
+find_library(CURL_LIBRARIES NAMES curl)
+message(STATUS ${CURL_LIBRARIES})
+
 add_executable(test_pin_daemon
   test/src/test.c
   test/src/test_socket_triggers_callback_on_read.c)
 
 target_link_libraries(test_pin_daemon
-  pin)
+  pin
+  )
 
 # Add the tests
 enable_testing()

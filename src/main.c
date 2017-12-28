@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <poll.h>
 #include <stdlib.h>
+#include <curl/curl.h>
 
 static void ring_doorbell(PinState state, void* userptr);
 static void light_change(PinState state, void* userptr);
@@ -81,6 +82,11 @@ const struct timespec ring_hold = {
   200000000
 };
 
+const struct timespec lock_hold = {
+  1,
+  0
+};
+
 static void ring_doorbell(PinState state, void* userptr) {
   if(state != PIN_STATE_HIGH)
     return;
@@ -104,14 +110,45 @@ static void rfid_reaction(int stream, void* userptr) {
   ssize_t nread;
   char buffer[21];
   long num = 0;
+
+  int door_opens = 0;
+
   while((nread = read(stream, buffer, 21)) > 0) {
     buffer[nread] = 0;
     buffer[20] = 0;
     // Convert second byte and onward from hex into a long
     num = strtol(&buffer[2], NULL, 16);
     // ignore first byte
-    printf("Read from RFID: %li\n", buffer, num);
-    // Needs to check with
+    if(num > 0) {
+      // TODO Use CURL to check if the RFID fob is valid
+      printf("Read from RFID: %li\n", buffer, num);
+      door_opens = 1;
+    }
+    // Needs to check with the name server
+    // disable CURL stuff for now
+    /*
+    CURL* curl = curl_easy_init();
+    char url_buffer[256];
+    if(curl) {
+      CURLcode res;
+      // Well, that's sort of lazy
+      snprintf(url_buffer, 255, "http://10.200.200.11/membership/api/verify?resource=door&rfid=%li", num);
+      curl_easy_setopt(curl, CURLOPT_URL, url_buffer);
+      res = curl_easy_perform(curl);
+      curl_easy_cleanup(curl);
+    }
+    */
+    // Just unlock the strike lock for a second
+  }
+
+  if(door_opens) {
+    pin_set_state(&pin_outs[0], PIN_STATE_HIGH);
+    nanosleep(&ring_hold, NULL);
+    pin_set_state(&pin_outs[0], PIN_STATE_LOW);
+  
+    pin_set_state(&pin_outs[3], PIN_STATE_HIGH);
+    nanosleep(&lock_hold, NULL);
+    pin_set_state(&pin_outs[3], PIN_STATE_LOW);
   }
 }
 
