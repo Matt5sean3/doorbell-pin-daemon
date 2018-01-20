@@ -40,6 +40,9 @@ const PinInConfiguration pin_ins[] = {
   PIN_IN("17", PIN_EDGE_BOTH, ring_doorbell, NULL, 0, 200000000, 1)
 };
 
+#define PIN_LIGHT_SENSOR (pin_ins[0])
+#define PIN_DOORBELL_BUTTON (pin_ins[1])
+
 const PinOutConfiguration pin_outs[] = {
   PIN_OUT("18"), // back doorbell
   PIN_OUT("27"), // front doorbell
@@ -47,6 +50,11 @@ const PinOutConfiguration pin_outs[] = {
   PIN_OUT("23"), // strike lock
   PIN_OUT("24") // RFID enable
 };
+
+#define PIN_BACK_DOORBELL (&pin_outs[0])
+#define PIN_FRONT_DOORBELL (&pin_outs[1])
+#define PIN_STRIKE_LOCK (&pin_outs[3])
+#define PIN_RFID_ENABLE (&pin_outs[4])
 
 const SocketConfiguration sockets[] = {
   { "/dev/serial0", O_RDONLY | O_NONBLOCK, rfid_reaction, NULL, POLLIN, BAUD2400 },
@@ -90,9 +98,9 @@ const struct timespec lock_hold = {
 static void ring_doorbell(PinState state, void* userptr) {
   if(state != PIN_STATE_HIGH)
     return;
-  pin_set_state(&pin_outs[1], PIN_STATE_HIGH);
+  pin_set_state(PIN_FRONT_DOORBELL, PIN_STATE_HIGH);
   nanosleep(&ring_hold, NULL);
-  pin_set_state(&pin_outs[1], PIN_STATE_LOW);
+  pin_set_state(PIN_FRONT_DOORBELL, PIN_STATE_LOW);
 }
 
 static void light_change(PinState state, void* userptr) {
@@ -138,17 +146,19 @@ static void rfid_reaction(int stream, void* userptr) {
       curl_easy_cleanup(curl);
     }
     */
-    // Just unlock the strike lock for a second
   }
 
+  // Just unlock the strike lock for a second
   if(door_opens) {
-    pin_set_state(&pin_outs[0], PIN_STATE_HIGH);
+    /*
+    pin_set_state(PIN_BACK_DOORBELL, PIN_STATE_HIGH);
     nanosleep(&ring_hold, NULL);
-    pin_set_state(&pin_outs[0], PIN_STATE_LOW);
+    pin_set_state(PIN_BACK_DOORBELL, PIN_STATE_LOW);
+    */
   
-    pin_set_state(&pin_outs[3], PIN_STATE_HIGH);
+    pin_set_state(PIN_STRIKE_LOCK, PIN_STATE_HIGH);
     nanosleep(&lock_hold, NULL);
-    pin_set_state(&pin_outs[3], PIN_STATE_LOW);
+    pin_set_state(PIN_STRIKE_LOCK, PIN_STATE_LOW);
   }
 }
 
